@@ -1,0 +1,1756 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>Dog Water Tracker - 7-Day Vet Log</title>
+  <meta name="description" content="Mobile web application to track your dog's daily water intake over 7 days for vet consultations." />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="theme-color" content="#0284c7" />
+  <style>
+    /* Mobile-first, iOS-optimized CSS */
+    :root {
+      --primary: #0284c7;
+      --primary-light: #e0f2fe;
+      --primary-dark: #0369a1;
+      --secondary: #f59e0b;
+      --secondary-light: #fef3c7;
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --danger: #ef4444;
+      --success: #10b981;
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --radius-full: 9999px;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
+      --shadow-md: 0 4px 12px rgba(2, 132, 199, 0.08);
+      --shadow-lg: 0 10px 25px -5px rgba(2, 132, 199, 0.12);
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 16px);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: #e2e8f0;
+      color: var(--text);
+      line-height: 1.4;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 0;
+      margin: 0;
+    }
+
+    .app-viewport {
+      width: 100%;
+      max-width: 440px;
+      min-height: 100vh;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      box-shadow: 0 0 35px rgba(0,0,0,0.1);
+      padding-top: var(--safe-top);
+      padding-bottom: calc(var(--safe-bottom) + 20px);
+      overflow-x: hidden;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+      color: #ffffff;
+      padding: 16px 20px 20px;
+      border-bottom-left-radius: var(--radius-lg);
+      border-bottom-right-radius: var(--radius-lg);
+      box-shadow: var(--shadow-md);
+      position: relative;
+    }
+
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .dog-info-btn {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: var(--radius-full);
+      padding: 6px 14px 6px 8px;
+      color: #fff;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      transition: background 0.2s, transform 0.1s;
+    }
+
+    .dog-info-btn:active {
+      transform: scale(0.97);
+      background: rgba(255, 255, 255, 0.25);
+    }
+
+    .dog-avatar-icon {
+      width: 30px;
+      height: 30px;
+      background: #ffffff;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .icon-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: background 0.2s, transform 0.1s;
+    }
+
+    .icon-btn:active {
+      transform: scale(0.92);
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    .dashboard-container {
+      padding: 16px 16px 8px;
+      margin-top: -10px;
+    }
+
+    .bowl-card {
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      padding: 20px 16px;
+      box-shadow: var(--shadow-md);
+      border: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .bowl-card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #38bdf8, #0284c7, #38bdf8);
+    }
+
+    .dashboard-title-row {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .dashboard-label {
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .dashboard-date-badge {
+      font-size: 0.78rem;
+      background: var(--primary-light);
+      color: var(--primary-dark);
+      padding: 3px 9px;
+      border-radius: var(--radius-full);
+      font-weight: 600;
+    }
+
+    .bowl-graphic-container {
+      position: relative;
+      width: 160px;
+      height: 130px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 8px 0;
+    }
+
+    .bowl-svg {
+      width: 100%;
+      height: 100%;
+      filter: drop-shadow(0 6px 10px rgba(2, 132, 199, 0.15));
+    }
+
+    .bowl-stats-overlay {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -35%);
+      text-align: center;
+      pointer-events: none;
+    }
+
+    .today-amount {
+      font-size: 2.2rem;
+      font-weight: 800;
+      line-height: 1;
+      color: #0369a1;
+      letter-spacing: -1px;
+    }
+
+    .today-unit {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #0284c7;
+      margin-left: 2px;
+    }
+
+    .today-target-caption {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-weight: 600;
+      margin-top: 3px;
+    }
+
+    .progress-track {
+      width: 100%;
+      height: 10px;
+      background: #e2e8f0;
+      border-radius: var(--radius-full);
+      overflow: hidden;
+      margin-top: 14px;
+      position: relative;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #38bdf8 0%, #0284c7 100%);
+      border-radius: var(--radius-full);
+      transition: width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .status-badge {
+      margin-top: 10px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: #f1f5f9;
+      padding: 5px 12px;
+      border-radius: var(--radius-full);
+    }
+
+    .stats-pills {
+      width: 100%;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px dashed var(--border);
+    }
+
+    .stat-pill {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: #f8fafc;
+      border-radius: var(--radius-md);
+      padding: 8px 10px;
+      border: 1px solid #edf2f7;
+    }
+
+    .stat-pill-label {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .stat-pill-val {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-top: 2px;
+    }
+
+    .section-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text);
+      margin: 16px 16px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .section-title span {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .quick-add-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      padding: 0 16px;
+    }
+
+    .quick-btn {
+      background: var(--surface);
+      border: 1.5px solid #bae6fd;
+      border-radius: var(--radius-md);
+      padding: 12px 6px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      cursor: pointer;
+      box-shadow: var(--shadow-sm);
+      transition: all 0.15s ease;
+      touch-action: manipulation;
+    }
+
+    .quick-btn:active {
+      transform: scale(0.94);
+      background: var(--primary-light);
+      border-color: var(--primary);
+    }
+
+    .quick-btn-amount {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: #0284c7;
+      line-height: 1;
+    }
+
+    .quick-btn-desc {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .quick-btn-icon {
+      font-size: 1.1rem;
+    }
+
+    .custom-input-card {
+      margin: 10px 16px 0;
+      background: var(--surface);
+      border-radius: var(--radius-md);
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .custom-stepper {
+      display: flex;
+      align-items: center;
+      flex: 1;
+      gap: 8px;
+    }
+
+    .stepper-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-full);
+      background: #f1f5f9;
+      border: 1px solid var(--border);
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .stepper-btn:active {
+      background: #e2e8f0;
+      transform: scale(0.93);
+    }
+
+    .custom-amount-input {
+      flex: 1;
+      height: 38px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      text-align: center;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .custom-amount-input:focus {
+      border-color: var(--primary);
+    }
+
+    .custom-add-btn {
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-md);
+      padding: 0 16px;
+      height: 38px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      box-shadow: 0 2px 6px rgba(2, 132, 199, 0.3);
+      transition: background 0.15s, transform 0.1s;
+    }
+
+    .custom-add-btn:active {
+      transform: scale(0.95);
+      background: var(--primary-dark);
+    }
+
+    .export-card {
+      margin: 16px 16px 4px;
+      background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+      border: 1px solid #fcd34d;
+      border-radius: var(--radius-lg);
+      padding: 14px 16px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .export-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .export-title {
+      font-size: 0.88rem;
+      font-weight: 800;
+      color: #92400e;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .export-badge {
+      font-size: 0.72rem;
+      font-weight: 700;
+      background: rgba(146, 64, 14, 0.15);
+      color: #78350f;
+      padding: 2px 8px;
+      border-radius: var(--radius-full);
+    }
+
+    .export-desc {
+      font-size: 0.78rem;
+      color: #78350f;
+      margin-bottom: 12px;
+      line-height: 1.35;
+    }
+
+    .export-btn-group {
+      display: flex;
+      gap: 6px;
+    }
+
+    .export-primary-btn {
+      flex: 1.4;
+      background: #d97706;
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-md);
+      padding: 10px 8px;
+      font-size: 0.84rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      box-shadow: 0 2px 6px rgba(217, 119, 6, 0.3);
+      transition: background 0.15s, transform 0.1s;
+    }
+
+    .export-primary-btn:active {
+      transform: scale(0.96);
+      background: #b45309;
+    }
+
+    .export-secondary-btn {
+      flex: 1;
+      background: #ffffff;
+      color: #78350f;
+      border: 1px solid #fcd34d;
+      border-radius: var(--radius-md);
+      padding: 10px 6px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      text-decoration: none;
+      transition: background 0.15s;
+    }
+
+    .export-secondary-btn:active {
+      background: #fef3c7;
+    }
+
+    .history-container {
+      padding: 0 16px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .day-card {
+      background: var(--surface);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-sm);
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+
+    .day-card.is-today {
+      border-color: #7dd3fc;
+      box-shadow: 0 2px 8px rgba(2, 132, 199, 0.08);
+    }
+
+    .day-header {
+      padding: 12px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      background: #ffffff;
+      user-select: none;
+    }
+
+    .day-card.is-today .day-header {
+      background: #f0f9ff;
+    }
+
+    .day-title-group {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+    }
+
+    .day-name {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .day-date {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .day-summary-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .day-total-badge {
+      font-size: 0.88rem;
+      font-weight: 800;
+      padding: 4px 10px;
+      border-radius: var(--radius-full);
+      display: flex;
+      align-items: center;
+      gap: 3px;
+    }
+
+    .day-chevron {
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      transition: transform 0.2s ease;
+    }
+
+    .day-chevron.open {
+      transform: rotate(180deg);
+    }
+
+    .day-entries-list {
+      border-top: 1px solid var(--border);
+      padding: 8px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      background: #fafafa;
+    }
+
+    .entry-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 10px;
+      background: #ffffff;
+      border-radius: var(--radius-sm);
+      border: 1px solid #f1f5f9;
+    }
+
+    .entry-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .entry-drop-icon {
+      color: var(--primary);
+      font-size: 0.85rem;
+    }
+
+    .entry-time {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .entry-amount {
+      font-size: 0.95rem;
+      font-weight: 800;
+      color: var(--text);
+    }
+
+    .entry-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .entry-del-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: var(--radius-sm);
+      background: transparent;
+      border: 1px solid transparent;
+      color: #94a3b8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 0.95rem;
+      transition: all 0.15s;
+    }
+
+    .entry-del-btn:hover, .entry-del-btn:active {
+      color: var(--danger);
+      background: #fee2e2;
+      border-color: #fca5a5;
+    }
+
+    .empty-day-state {
+      padding: 12px;
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: calc(var(--safe-bottom) + 24px);
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: #0f172a;
+      color: #ffffff;
+      padding: 12px 20px;
+      border-radius: var(--radius-full);
+      font-size: 0.88rem;
+      font-weight: 600;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      z-index: 1000;
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      pointer-events: none;
+      max-width: 90%;
+      text-align: center;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .splash-text {
+      position: absolute;
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: var(--primary);
+      pointer-events: none;
+      animation: floatUp 0.8s ease-out forwards;
+      z-index: 50;
+    }
+
+    @keyframes floatUp {
+      0% {
+        opacity: 1;
+        transform: translate(-50%, 0) scale(0.9);
+      }
+      100% {
+        opacity: 0;
+        transform: translate(-50%, -45px) scale(1.15);
+      }
+    }
+
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(15, 23, 42, 0.5);
+      backdrop-filter: blur(4px);
+      z-index: 500;
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.25s ease;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+      opacity: 1;
+    }
+
+    .bottom-sheet {
+      background: #ffffff;
+      width: 100%;
+      max-width: 440px;
+      border-top-left-radius: var(--radius-lg);
+      border-top-right-radius: var(--radius-lg);
+      padding: 20px 20px calc(var(--safe-bottom) + 20px);
+      box-shadow: 0 -10px 30px rgba(0,0,0,0.15);
+      transform: translateY(100%);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      max-height: 85vh;
+      overflow-y: auto;
+    }
+
+    .modal-overlay.active .bottom-sheet {
+      transform: translateY(0);
+    }
+
+    .sheet-handle {
+      width: 40px;
+      height: 5px;
+      background: #cbd5e1;
+      border-radius: var(--radius-full);
+      margin: 0 auto 16px;
+    }
+
+    .sheet-title {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--text);
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .sheet-subtitle {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+    }
+
+    .form-group {
+      margin-bottom: 14px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-md);
+      font-size: 0.95rem;
+      color: var(--text);
+      outline: none;
+    }
+
+    .form-input:focus {
+      border-color: var(--primary);
+    }
+
+    .rec-box {
+      background: var(--primary-light);
+      border: 1px solid #bae6fd;
+      border-radius: var(--radius-md);
+      padding: 10px 12px;
+      font-size: 0.8rem;
+      color: #0369a1;
+      margin-bottom: 16px;
+      line-height: 1.4;
+    }
+
+    .sheet-btn-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .btn-secondary {
+      flex: 1;
+      padding: 12px;
+      background: #f1f5f9;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+
+    .btn-primary {
+      flex: 1;
+      padding: 12px;
+      background: var(--primary);
+      border: none;
+      border-radius: var(--radius-md);
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #fff;
+      cursor: pointer;
+    }
+
+    .report-preview-pre {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.72rem;
+      color: #334155;
+      white-space: pre-wrap;
+      word-break: break-word;
+      max-height: 250px;
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body>
+  <main class="app-viewport">
+    <header class="header">
+      <div class="header-top">
+        <button id="profileBtn" class="dog-info-btn" aria-label="Edit dog profile">
+          <div class="dog-avatar-icon">🐶</div>
+          <div>
+            <span id="headerDogName">Buddy</span>
+            <span style="font-size:0.75rem; opacity:0.85; margin-left:4px;">✏️</span>
+          </div>
+        </button>
+
+        <div class="header-actions">
+          <button id="quickDemoBtn" class="icon-btn" title="Add Sample History for Vet" aria-label="Seed sample data">🧪</button>
+          <button id="openReportBtn" class="icon-btn" title="View Full Vet Report" aria-label="View report">📋</button>
+        </div>
+      </div>
+    </header>
+
+    <section class="dashboard-container" aria-label="Today's Water Dashboard">
+      <div class="bowl-card">
+        <div class="dashboard-title-row">
+          <span class="dashboard-label">
+            <span>💧</span> TODAY'S WATER INTAKE
+          </span>
+          <span id="todayDateLabel" class="dashboard-date-badge">Today</span>
+        </div>
+
+        <div class="bowl-graphic-container" id="bowlGraphic">
+          <svg class="bowl-svg" viewBox="0 0 160 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="bowlGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="#cbd5e1" />
+                <stop offset="100%" stop-color="#94a3b8" />
+              </linearGradient>
+              <linearGradient id="waterGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="#7dd3fc" />
+                <stop offset="100%" stop-color="#0284c7" />
+              </linearGradient>
+              <clipPath id="bowlClip">
+                <path d="M 20,40 C 20,95 40,110 80,110 C 120,110 140,95 140,40 Z" />
+              </clipPath>
+            </defs>
+
+            <ellipse cx="80" cy="112" rx="55" ry="6" fill="#000000" fill-opacity="0.08" />
+            <path d="M 16,38 C 16,98 38,114 80,114 C 122,114 144,98 144,38 Z" fill="url(#bowlGrad)" />
+            <path d="M 20,40 C 20,95 40,110 80,110 C 120,110 140,95 140,40 Z" fill="#f1f5f9" />
+
+            <g clip-path="url(#bowlClip)">
+              <rect id="waterRect" x="0" y="80" width="160" height="120" fill="url(#waterGrad)" style="transition: y 0.5s ease-out;" />
+              <ellipse id="waterSurface" cx="80" cy="80" rx="60" ry="8" fill="#bae6fd" style="transition: cy 0.5s ease-out;" />
+            </g>
+
+            <ellipse cx="80" cy="40" rx="62" ry="12" fill="none" stroke="#94a3b8" stroke-width="4" />
+            <ellipse cx="80" cy="40" rx="58" ry="10" fill="none" stroke="#e2e8f0" stroke-width="2" />
+
+            <circle cx="80" cy="92" r="7" fill="#ffffff" fill-opacity="0.4" />
+            <circle cx="74" cy="83" r="3" fill="#ffffff" fill-opacity="0.4" />
+            <circle cx="86" cy="83" r="3" fill="#ffffff" fill-opacity="0.4" />
+            <circle cx="80" cy="81" r="3" fill="#ffffff" fill-opacity="0.4" />
+          </svg>
+
+          <div class="bowl-stats-overlay">
+            <div>
+              <span id="todayTotalText" class="today-amount">0</span>
+              <span class="today-unit">ml</span>
+            </div>
+            <div id="targetCaption" class="today-target-caption">Goal: 600 ml</div>
+          </div>
+        </div>
+
+        <div class="progress-track" aria-label="Daily progress bar">
+          <div id="progressBar" class="progress-fill" style="width: 0%;"></div>
+        </div>
+
+        <div id="statusBadge" class="status-badge">
+          <span>🐾</span> <span id="statusText">Tap a button below to log water</span>
+        </div>
+
+        <div class="stats-pills">
+          <div class="stat-pill">
+            <span class="stat-pill-label">Today's Drinks</span>
+            <span id="drinkCountVal" class="stat-pill-val">0 drinks</span>
+          </div>
+          <div class="stat-pill">
+            <span class="stat-pill-label">7-Day Daily Avg</span>
+            <span id="weeklyAvgVal" class="stat-pill-val">0 ml/day</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section aria-label="Quick Add Water">
+      <div class="section-title">
+        <span>⚡ Quick Add Intake</span>
+        <span style="font-size:0.75rem; color:var(--text-muted); font-weight:500;">Tap to log</span>
+      </div>
+
+      <div class="quick-add-grid">
+        <button class="quick-btn" data-amount="50" aria-label="Add 50 milliliters">
+          <span class="quick-btn-icon">💧</span>
+          <span class="quick-btn-amount">+50</span>
+          <span class="quick-btn-desc">Sip (50ml)</span>
+        </button>
+        <button class="quick-btn" data-amount="100" aria-label="Add 100 milliliters">
+          <span class="quick-btn-icon">🥣</span>
+          <span class="quick-btn-amount">+100</span>
+          <span class="quick-btn-desc">Small (100ml)</span>
+        </button>
+        <button class="quick-btn" data-amount="250" aria-label="Add 250 milliliters">
+          <span class="quick-btn-icon">🐕</span>
+          <span class="quick-btn-amount">+250</span>
+          <span class="quick-btn-desc">Bowl (250ml)</span>
+        </button>
+      </div>
+
+      <div class="custom-input-card">
+        <div class="custom-stepper">
+          <button id="stepMinusBtn" class="stepper-btn" aria-label="Decrease amount by 25ml">−</button>
+          <input
+            type="number"
+            id="customAmountInput"
+            class="custom-amount-input"
+            value="150"
+            min="10"
+            max="3000"
+            step="10"
+            inputmode="numeric"
+            pattern="[0-9]*"
+            aria-label="Custom water amount in milliliters"
+          />
+          <button id="stepPlusBtn" class="stepper-btn" aria-label="Increase amount by 25ml">+</button>
+        </div>
+        <button id="customAddBtn" class="custom-add-btn" aria-label="Add custom amount">
+          <span>+ Add ml</span>
+        </button>
+      </div>
+    </section>
+
+    <section aria-label="Vet Export Action">
+      <div class="export-card">
+        <div class="export-header">
+          <span class="export-title">
+            <span>🩺</span> VET MEDICAL EXPORT
+          </span>
+          <span class="export-badge">7-Day Record</span>
+        </div>
+        <p class="export-desc">
+          Ready to send to your vet? Export the full 7-day intake history with timestamps and daily averages.
+        </p>
+        <div class="export-btn-group">
+          <button id="copyVetBtn" class="export-primary-btn" aria-label="Copy 7-Day Log for Vet">
+            <span>📋 Copy for Vet</span>
+          </button>
+          <button id="shareWhatsAppBtn" class="export-secondary-btn" aria-label="Share log via WhatsApp">
+            <span>💬 WhatsApp</span>
+          </button>
+          <button id="shareEmailBtn" class="export-secondary-btn" aria-label="Share log via Email">
+            <span>✉️ Email</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section aria-label="Past 7 Days History">
+      <div class="section-title">
+        <span>📅 Past 7 Days History</span>
+        <span id="historyEntryCount" style="font-size:0.75rem; color:var(--text-muted); font-weight:600;">0 entries</span>
+      </div>
+
+      <div id="weeklyHistoryContainer" class="history-container">
+      </div>
+    </section>
+
+    <div id="toast" class="toast" role="status" aria-live="polite">
+      <span id="toastIcon">💧</span>
+      <span id="toastMsg">Logged +100ml</span>
+    </div>
+
+    <div id="profileModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="bottom-sheet">
+        <div class="sheet-handle"></div>
+        <h3 id="modalTitle" class="sheet-title">🐶 Dog Profile & Target</h3>
+        <p class="sheet-subtitle">Customize your dog's profile and daily hydration goal</p>
+
+        <div class="form-group">
+          <label class="form-label" for="dogNameInput">Dog's Name</label>
+          <input type="text" id="dogNameInput" class="form-input" placeholder="e.g. Buddy, Milo, Bella" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="dogWeightInput">Weight (kg) & Size Preset</label>
+          <div style="display: flex; gap: 6px; margin-bottom: 8px;">
+            <button type="button" id="sizeSmallBtn" style="flex:1; padding:6px 4px; font-size:0.75rem; font-weight:600; background:#f1f5f9; border:1px solid var(--border); border-radius:6px; cursor:pointer;">Small (~7kg)</button>
+            <button type="button" id="sizeMedBtn" style="flex:1; padding:6px 4px; font-size:0.75rem; font-weight:600; background:#f1f5f9; border:1px solid var(--border); border-radius:6px; cursor:pointer;">Medium (~15kg)</button>
+            <button type="button" id="sizeLargeBtn" style="flex:1; padding:6px 4px; font-size:0.75rem; font-weight:600; background:#f1f5f9; border:1px solid var(--border); border-radius:6px; cursor:pointer;">Large (~30kg)</button>
+          </div>
+          <input type="number" id="dogWeightInput" class="form-input" placeholder="e.g. 12" min="1" max="120" step="0.5" />
+        </div>
+
+        <div class="rec-box" id="weightRecBox">
+          💡 <strong>Vet Guideline:</strong> Dogs generally require <strong>50–60 ml of water per kg of body weight</strong> per day. (e.g., 10 kg dog ≈ 500–600 ml/day).
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="dailyTargetInput">Daily Target (ml)</label>
+          <input type="number" id="dailyTargetInput" class="form-input" placeholder="600" min="100" max="5000" step="50" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="vetNotesInput">Vet Notes / Symptoms (optional)</label>
+          <input type="text" id="vetNotesInput" class="form-input" placeholder="e.g. Monitoring for diabetes or post-surgery hydration" />
+        </div>
+
+        <div class="sheet-btn-row">
+          <button id="closeProfileBtn" class="btn-secondary">Cancel</button>
+          <button id="saveProfileBtn" class="btn-primary">Save Profile</button>
+        </div>
+
+        <div style="margin-top: 16px; padding-top: 14px; border-top: 1px dashed var(--border); display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size:0.78rem; color:var(--text-muted);">Reset all water records</span>
+          <button type="button" id="resetWeekBtn" style="background:transparent; border:none; color:var(--danger); font-size:0.8rem; font-weight:700; cursor:pointer; padding:4px 8px;">Clear Week Log</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="reportModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="reportModalTitle">
+      <div class="bottom-sheet">
+        <div class="sheet-handle"></div>
+        <h3 id="reportModalTitle" class="sheet-title">🩺 Vet Medical Report Preview</h3>
+        <p class="sheet-subtitle">This text is formatted to send directly to your vet clinic</p>
+
+        <pre id="reportPreviewContent" class="report-preview-pre"></pre>
+
+        <div class="sheet-btn-row">
+          <button id="closeReportBtn" class="btn-secondary">Close</button>
+          <button id="modalCopyReportBtn" class="btn-primary">📋 Copy Text</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    (function () {
+      'use strict';
+
+      const STORAGE_KEY_ENTRIES = 'dog_water_tracker_entries_v1';
+      const STORAGE_KEY_PROFILE = 'dog_water_tracker_profile_v1';
+
+      let profile = {
+        name: 'Buddy',
+        weightKg: 12,
+        dailyTargetMl: 650,
+        breed: '',
+        notes: ''
+      };
+
+      let entries = [];
+
+      const headerDogName = document.getElementById('headerDogName');
+      const todayTotalText = document.getElementById('todayTotalText');
+      const targetCaption = document.getElementById('targetCaption');
+      const progressBar = document.getElementById('progressBar');
+      const statusText = document.getElementById('statusText');
+      const drinkCountVal = document.getElementById('drinkCountVal');
+      const weeklyAvgVal = document.getElementById('weeklyAvgVal');
+      const waterRect = document.getElementById('waterRect');
+      const waterSurface = document.getElementById('waterSurface');
+      const customAmountInput = document.getElementById('customAmountInput');
+      const customAddBtn = document.getElementById('customAddBtn');
+      const stepMinusBtn = document.getElementById('stepMinusBtn');
+      const stepPlusBtn = document.getElementById('stepPlusBtn');
+      const weeklyHistoryContainer = document.getElementById('weeklyHistoryContainer');
+      const historyEntryCount = document.getElementById('historyEntryCount');
+      const copyVetBtn = document.getElementById('copyVetBtn');
+      const shareWhatsAppBtn = document.getElementById('shareWhatsAppBtn');
+      const shareEmailBtn = document.getElementById('shareEmailBtn');
+      const profileBtn = document.getElementById('profileBtn');
+      const quickDemoBtn = document.getElementById('quickDemoBtn');
+      const openReportBtn = document.getElementById('openReportBtn');
+      const toastEl = document.getElementById('toast');
+      const toastMsgEl = document.getElementById('toastMsg');
+      const toastIconEl = document.getElementById('toastIcon');
+
+      const profileModal = document.getElementById('profileModal');
+      const dogNameInput = document.getElementById('dogNameInput');
+      const dogWeightInput = document.getElementById('dogWeightInput');
+      const sizeSmallBtn = document.getElementById('sizeSmallBtn');
+      const sizeMedBtn = document.getElementById('sizeMedBtn');
+      const sizeLargeBtn = document.getElementById('sizeLargeBtn');
+      const dailyTargetInput = document.getElementById('dailyTargetInput');
+      const vetNotesInput = document.getElementById('vetNotesInput');
+      const weightRecBox = document.getElementById('weightRecBox');
+      const closeProfileBtn = document.getElementById('closeProfileBtn');
+      const saveProfileBtn = document.getElementById('saveProfileBtn');
+      const resetWeekBtn = document.getElementById('resetWeekBtn');
+
+      const reportModal = document.getElementById('reportModal');
+      const reportPreviewContent = document.getElementById('reportPreviewContent');
+      const closeReportBtn = document.getElementById('closeReportBtn');
+      const modalCopyReportBtn = document.getElementById('modalCopyReportBtn');
+
+      let toastTimeout = null;
+
+      function showToast(message, icon = '💧') {
+        if (toastTimeout) clearTimeout(toastTimeout);
+        toastIconEl.textContent = icon;
+        toastMsgEl.textContent = message;
+        toastEl.classList.add('show');
+        toastTimeout = setTimeout(() => {
+          toastEl.classList.remove('show');
+        }, 2600);
+      }
+
+      function toDateKey(d) {
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return year + '-' + month + '-' + day;
+      }
+
+      function formatTime(timestamp) {
+        const d = new Date(timestamp);
+        return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+      }
+
+      function getFriendlyDateLabel(dateKey, refDate = new Date()) {
+        const todayKey = toDateKey(refDate);
+        const yesterday = new Date(refDate);
+        yesterday.setDate(refDate.getDate() - 1);
+        const yesterdayKey = toDateKey(yesterday);
+
+        if (dateKey === todayKey) return 'Today';
+        if (dateKey === yesterdayKey) return 'Yesterday';
+
+        const parts = dateKey.split('-').map(Number);
+        const target = new Date(parts[0], parts[1] - 1, parts[2]);
+        return target.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+      }
+
+      function loadStorage() {
+        try {
+          const savedProfile = localStorage.getItem(STORAGE_KEY_PROFILE);
+          if (savedProfile) {
+            profile = Object.assign({}, profile, JSON.parse(savedProfile));
+          }
+
+          const savedEntries = localStorage.getItem(STORAGE_KEY_ENTRIES);
+          if (savedEntries) {
+            entries = JSON.parse(savedEntries);
+          }
+        } catch (e) {
+          console.error('Failed to load localStorage', e);
+        }
+      }
+
+      function saveStorage() {
+        try {
+          localStorage.setItem(STORAGE_KEY_PROFILE, JSON.stringify(profile));
+          localStorage.setItem(STORAGE_KEY_ENTRIES, JSON.stringify(entries));
+        } catch (e) {
+          console.error('Failed to save localStorage', e);
+        }
+      }
+
+      function getGroupedDays() {
+        const now = new Date();
+        const days = [];
+        const map = {};
+
+        for (let i = 0; i < 7; i++) {
+          const d = new Date(now);
+          d.setDate(now.getDate() - i);
+          const key = toDateKey(d);
+          days.push(key);
+          map[key] = [];
+        }
+
+        for (const entry of entries) {
+          const entryKey = toDateKey(new Date(entry.timestamp));
+          if (map[entryKey]) {
+            map[entryKey].push(entry);
+          }
+        }
+
+        return days.map(key => {
+          const dayEntries = map[key] || [];
+          dayEntries.sort((a, b) => b.timestamp - a.timestamp);
+          const totalMl = dayEntries.reduce((sum, e) => sum + e.amount, 0);
+          return {
+            dateKey: key,
+            label: getFriendlyDateLabel(key, now),
+            totalMl,
+            entries: dayEntries
+          };
+        });
+      }
+
+      function render() {
+        headerDogName.textContent = profile.name || 'My Dog';
+        targetCaption.textContent = 'Goal: ' + profile.dailyTargetMl + ' ml';
+
+        const grouped = getGroupedDays();
+        const todayGroup = grouped[0] || { totalMl: 0, entries: [] };
+        const todayTotal = todayGroup.totalMl;
+        const totalEntriesCount = entries.length;
+
+        todayTotalText.textContent = todayTotal;
+        drinkCountVal.textContent = todayGroup.entries.length + (todayGroup.entries.length === 1 ? ' drink' : ' drinks');
+        historyEntryCount.textContent = totalEntriesCount + (totalEntriesCount === 1 ? ' entry' : ' entries');
+
+        const sevenDayTotal = grouped.reduce((sum, d) => sum + d.totalMl, 0);
+        const weeklyAvg = Math.round(sevenDayTotal / 7);
+        weeklyAvgVal.textContent = weeklyAvg + ' ml/day';
+
+        const target = profile.dailyTargetMl || 600;
+        const percent = Math.min(Math.round((todayTotal / target) * 100), 100);
+        progressBar.style.width = percent + '%';
+
+        const waterY = Math.max(42, Math.min(110, 110 - ((todayTotal / target) * 68)));
+        waterRect.setAttribute('y', waterY);
+        waterSurface.setAttribute('cy', waterY);
+
+        if (todayTotal === 0) {
+          statusText.textContent = "Start tracking " + profile.name + "'s water today 💧";
+        } else if (percent < 50) {
+          statusText.textContent = "Good start! " + todayTotal + "ml (" + percent + "% of daily goal)";
+        } else if (percent < 100) {
+          statusText.textContent = "Well hydrated! " + (target - todayTotal) + "ml left to goal 🐕";
+        } else {
+          statusText.textContent = "Goal reached! Excellent hydration! 🌟🦴";
+        }
+
+        renderWeeklyHistory(grouped);
+      }
+
+      function renderWeeklyHistory(grouped) {
+        weeklyHistoryContainer.innerHTML = '';
+
+        grouped.forEach((day, index) => {
+          const isToday = index === 0;
+          const card = document.createElement('div');
+          card.className = 'day-card' + (isToday ? ' is-today' : '');
+
+          const header = document.createElement('div');
+          header.className = 'day-header';
+          header.setAttribute('role', 'button');
+          header.setAttribute('tabindex', '0');
+          header.setAttribute('aria-expanded', isToday ? 'true' : 'false');
+          header.setAttribute('aria-label', day.label + ' total ' + day.totalMl + 'ml');
+
+          const percent = profile.dailyTargetMl > 0 ? Math.round((day.totalMl / profile.dailyTargetMl) * 100) : 0;
+          let badgeColor = 'var(--primary-light)';
+          let badgeTextColor = 'var(--primary-dark)';
+          let statusPill = '';
+
+          if (day.totalMl >= profile.dailyTargetMl) {
+            badgeColor = '#dcfce7';
+            badgeTextColor = '#166534';
+            statusPill = '<span style="font-size:0.7rem; color:#166534; font-weight:700; margin-right:4px;">★ Goal Met</span>';
+          } else if (percent >= 50) {
+            badgeColor = '#e0f2fe';
+            badgeTextColor = '#0369a1';
+          } else if (day.totalMl > 0) {
+            badgeColor = '#fef3c7';
+            badgeTextColor = '#92400e';
+            statusPill = '<span style="font-size:0.7rem; color:#b45309; font-weight:700; margin-right:4px;">Low</span>';
+          }
+
+          header.innerHTML = `
+            <div class="day-title-group">
+              <span class="day-name">${day.label}</span>
+              <span class="day-date">${day.dateKey}</span>
+            </div>
+            <div class="day-summary-group">
+              ${statusPill}
+              <span class="day-total-badge" style="background:${badgeColor}; color:${badgeTextColor};">${day.totalMl} ml</span>
+              <span class="day-chevron ${isToday ? 'open' : ''}">▼</span>
+            </div>
+          `;
+
+          const list = document.createElement('div');
+          list.className = 'day-entries-list';
+          list.style.display = isToday ? 'flex' : 'none';
+
+          if (day.entries.length === 0) {
+            const empty = document.createElement('div');
+            empty.className = 'empty-day-state';
+            empty.textContent = 'No water intake logged for this day';
+            list.appendChild(empty);
+          } else {
+            day.entries.forEach(entry => {
+              const row = document.createElement('div');
+              row.className = 'entry-row';
+              const timeStr = formatTime(entry.timestamp);
+
+              row.innerHTML = `
+                <div class="entry-left">
+                  <span class="entry-drop-icon">💧</span>
+                  <span class="entry-time">${timeStr}</span>
+                  <span class="entry-amount">+${entry.amount} ml</span>
+                </div>
+                <div class="entry-actions">
+                  <button class="entry-del-btn" data-id="${entry.id}" aria-label="Delete ${entry.amount}ml at ${timeStr}">
+                    🗑️
+                  </button>
+                </div>
+              `;
+
+              const delBtn = row.querySelector('.entry-del-btn');
+              delBtn.addEventListener('click', (ev) => {
+                ev.stopPropagation();
+                deleteEntry(entry.id, entry.amount);
+              });
+
+              list.appendChild(row);
+            });
+          }
+
+          header.addEventListener('click', () => {
+            const isOpen = list.style.display === 'flex';
+            list.style.display = isOpen ? 'none' : 'flex';
+            const chevron = header.querySelector('.day-chevron');
+            if (chevron) chevron.classList.toggle('open', !isOpen);
+            header.setAttribute('aria-expanded', !isOpen ? 'true' : 'false');
+          });
+
+          card.appendChild(header);
+          card.appendChild(list);
+          weeklyHistoryContainer.appendChild(card);
+        });
+      }
+
+      function addWater(amount) {
+        if (!amount || isNaN(amount) || amount <= 0) {
+          showToast('Please enter a valid amount', '⚠️');
+          return;
+        }
+
+        const newEntry = {
+          id: 'w_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+          timestamp: Date.now(),
+          amount: Math.round(amount)
+        };
+
+        entries.push(newEntry);
+        saveStorage();
+        render();
+
+        spawnSplashAnimation('+' + amount + ' ml');
+        showToast('Logged +' + amount + ' ml for ' + (profile.name || 'Buddy') + '!', '💧');
+      }
+
+      function spawnSplashAnimation(text) {
+        const bowl = document.getElementById('bowlGraphic');
+        if (!bowl) return;
+        const splash = document.createElement('div');
+        splash.className = 'splash-text';
+        splash.textContent = text;
+        splash.style.left = '50%';
+        splash.style.top = '40%';
+        bowl.appendChild(splash);
+        setTimeout(() => splash.remove(), 850);
+      }
+
+      function deleteEntry(id, amount) {
+        const idx = entries.findIndex(e => e.id === id);
+        if (idx !== -1) {
+          entries.splice(idx, 1);
+          saveStorage();
+          render();
+          showToast('Removed ' + amount + 'ml entry', '🗑️');
+        }
+      }
+
+      function buildVetReport() {
+        const grouped = getGroupedDays();
+        const dogName = (profile.name || 'Buddy').trim();
+        const now = new Date();
+
+        const sevenDayTotal = grouped.reduce((sum, d) => sum + d.totalMl, 0);
+        const weeklyAvg = Math.round(sevenDayTotal / 7);
+
+        let maxDay = { label: 'N/A', totalMl: 0 };
+        let minDay = { label: 'N/A', totalMl: Infinity };
+
+        grouped.forEach(d => {
+          if (d.totalMl > 0) {
+            if (d.totalMl > maxDay.totalMl) maxDay = { label: d.label + ' (' + d.dateKey + ')', totalMl: d.totalMl };
+            if (d.totalMl < minDay.totalMl) minDay = { label: d.label + ' (' + d.dateKey + ')', totalMl: d.totalMl };
+          }
+        });
+        if (minDay.totalMl === Infinity) minDay = { label: 'N/A', totalMl: 0 };
+
+        const lines = [];
+        lines.push('🐾 ' + dogName.toUpperCase() + ' - 7-DAY WATER INTAKE REPORT');
+        lines.push('==========================================');
+        lines.push('Patient: ' + dogName);
+        if (profile.weightKg) {
+          const minRec = Math.round(profile.weightKg * 50);
+          const maxRec = Math.round(profile.weightKg * 60);
+          lines.push('Weight: ' + profile.weightKg + ' kg (Est. need: ' + minRec + '–' + maxRec + ' ml/day)');
+        }
+        lines.push('Daily Goal: ' + profile.dailyTargetMl + ' ml');
+        lines.push('Period: ' + grouped[6].dateKey + ' to ' + grouped[0].dateKey);
+        lines.push('Generated: ' + now.toLocaleDateString() + ' ' + formatTime(now.getTime()));
+        lines.push('');
+        lines.push('📊 7-DAY SUMMARY');
+        lines.push('------------------------------------------');
+        lines.push('• Daily Average: ' + weeklyAvg + ' ml/day');
+        lines.push('• 7-Day Total: ' + sevenDayTotal + ' ml');
+        lines.push('• Highest Intake: ' + maxDay.totalMl + ' ml (' + maxDay.label + ')');
+        lines.push('• Lowest Intake: ' + minDay.totalMl + ' ml (' + minDay.label + ')');
+        lines.push('');
+        lines.push('📅 DAILY BREAKDOWN');
+        lines.push('------------------------------------------');
+
+        grouped.forEach(day => {
+          const count = day.entries.length;
+          lines.push('▶ ' + day.label + ' (' + day.dateKey + '): ' + day.totalMl + ' ml (' + count + (count === 1 ? ' drink' : ' drinks') + ')');
+          if (day.entries.length === 0) {
+            lines.push('   (No water intake recorded)');
+          } else {
+            day.entries.forEach(e => {
+              lines.push('   • ' + formatTime(e.timestamp) + ' — ' + e.amount + ' ml');
+            });
+          }
+          lines.push('');
+        });
+
+        if (profile.notes) {
+          lines.push('📝 OWNER OBSERVATIONS:');
+          lines.push(profile.notes);
+          lines.push('');
+        }
+
+        lines.push('==========================================');
+        lines.push('Exported via Dog Water Tracker');
+
+        return lines.join('\n');
+      }
+
+      async function copyToClipboard(text) {
+        try {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(text);
+            return true;
+          }
+          const textArea = document.createElement('textarea');
+          textArea.value = text;
+          textArea.style.position = 'fixed';
+          textArea.style.left = '-9999px';
+          document.body.appendChild(textArea);
+          textArea.focus();
+          textArea.select();
+          const successful = document.execCommand('copy');
+          document.body.removeChild(textArea);
+          return successful;
+        } catch (err) {
+          console.error('Clipboard copy error', err);
+          return false;
+        }
+      }
+
+      function seedDemoData() {
+        const now = new Date();
+        const demoEntries = [];
+
+        const schedule = [
+          { dayOffset: 0, drinks: [{ h: 8, m: 15, amt: 150 }, { h: 12, m: 45, amt: 100 }, { h: 16, m: 20, amt: 250 }] },
+          { dayOffset: 1, drinks: [{ h: 7, m: 30, amt: 200 }, { h: 11, m: 10, amt: 150 }, { h: 15, m: 40, amt: 100 }, { h: 19, m: 25, amt: 200 }] },
+          { dayOffset: 2, drinks: [{ h: 8, m: 0, amt: 150 }, { h: 13, m: 15, amt: 250 }, { h: 18, m: 50, amt: 200 }] },
+          { dayOffset: 3, drinks: [{ h: 9, m: 20, amt: 100 }, { h: 14, m: 30, amt: 150 }, { h: 20, m: 10, amt: 150 }] },
+          { dayOffset: 4, drinks: [{ h: 7, m: 45, amt: 250 }, { h: 12, m: 0, amt: 200 }, { h: 17, m: 30, amt: 250 }] },
+          { dayOffset: 5, drinks: [{ h: 8, m: 30, amt: 150 }, { h: 13, m: 45, amt: 150 }, { h: 19, m: 0, amt: 200 }] },
+          { dayOffset: 6, drinks: [{ h: 8, m: 10, amt: 200 }, { h: 15, m: 0, amt: 250 }, { h: 20, m: 30, amt: 150 }] },
+        ];
+
+        schedule.forEach(item => {
+          const targetDay = new Date(now);
+          targetDay.setDate(now.getDate() - item.dayOffset);
+
+          item.drinks.forEach((d, idx) => {
+            const entryDate = new Date(targetDay);
+            entryDate.setHours(d.h, d.m, 0, 0);
+            demoEntries.push({
+              id: 'demo_' + item.dayOffset + '_' + idx,
+              timestamp: entryDate.getTime(),
+              amount: d.amt
+            });
+          });
+        });
+
+        entries = demoEntries;
+        saveStorage();
+        render();
+        showToast('Loaded 7-day vet sample data!', '🧪');
+      }
+
+      document.querySelectorAll('.quick-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const amt = parseInt(btn.getAttribute('data-amount'), 10);
+          addWater(amt);
+        });
+      });
+
+      stepMinusBtn.addEventListener('click', () => {
+        const cur = parseInt(customAmountInput.value, 10) || 100;
+        customAmountInput.value = Math.max(10, cur - 25);
+      });
+
+      stepPlusBtn.addEventListener('click', () => {
+        const cur = parseInt(customAmountInput.value, 10) || 100;
+        customAmountInput.value = cur + 25;
+      });
+
+      customAddBtn.addEventListener('click', () => {
+        const val = parseInt(customAmountInput.value, 10);
+        addWater(val);
+      });
+
+      customAmountInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          addWater(parseInt(customAmountInput.value, 10));
+        }
+      });
+
+      copyVetBtn.addEventListener('click', async () => {
+        const report = buildVetReport();
+        const success = await copyToClipboard(report);
+        if (success) {
+          showToast('7-Day Log copied! Ready to paste to Vet 🩺', '📋');
+        } else {
+          openReportPreview();
+        }
+      });
+
+      shareWhatsAppBtn.addEventListener('click', () => {
+        const report = buildVetReport();
+        const url = 'https://api.whatsapp.com/send?text=' + encodeURIComponent(report);
+        window.open(url, '_blank');
+      });
+
+      shareEmailBtn.addEventListener('click', () => {
+        const report = buildVetReport();
+        const subject = encodeURIComponent((profile.name || 'Dog') + " - 7-Day Water Intake Log for Vet");
+        const body = encodeURIComponent(report);
+        window.location.href = 'mailto:?subject=' + subject + '&body=' + body;
+      });
+
+      sizeSmallBtn.addEventListener('click', () => {
+        dogWeightInput.value = 7;
+        updateWeightRecText();
+        dailyTargetInput.value = 400;
+      });
+
+      sizeMedBtn.addEventListener('click', () => {
+        dogWeightInput.value = 15;
+        updateWeightRecText();
+        dailyTargetInput.value = 800;
+      });
+
+      sizeLargeBtn.addEventListener('click', () => {
+        dogWeightInput.value = 30;
+        updateWeightRecText();
+        dailyTargetInput.value = 1600;
+      });
+
+      resetWeekBtn.addEventListener('click', () => {
+        if (confirm('Clear all recorded water entries for this week?')) {
+          entries = [];
+          saveStorage();
+          closeProfileModal();
+          render();
+          showToast('Cleared water intake log', '🗑️');
+        }
+      });
+
+      quickDemoBtn.addEventListener('click', () => {
+        if (confirm('Load sample 7-day intake data for ' + (profile.name || 'Buddy') + '?')) {
+          seedDemoData();
+        }
+      });
+
+      function openProfileModal() {
+        dogNameInput.value = profile.name || '';
+        dogWeightInput.value = profile.weightKg || '';
+        dailyTargetInput.value = profile.dailyTargetMl || 600;
+        vetNotesInput.value = profile.notes || '';
+        updateWeightRecText();
+        profileModal.classList.add('active');
+      }
+
+      function closeProfileModal() {
+        profileModal.classList.remove('active');
+      }
+
+      function updateWeightRecText() {
+        const w = parseFloat(dogWeightInput.value);
+        if (w && w > 0) {
+          const min = Math.round(w * 50);
+          const max = Math.round(w * 60);
+          weightRecBox.innerHTML = `💡 <strong>Vet Guideline for ${w}kg:</strong> Recommended daily water intake is <strong>${min}–${max} ml/day</strong> (50–60 ml per kg).`;
+        } else {
+          weightRecBox.innerHTML = `💡 <strong>Vet Guideline:</strong> Dogs generally require <strong>50–60 ml of water per kg of body weight</strong> per day.`;
+        }
+      }
+
+      dogWeightInput.addEventListener('input', () => {
+        updateWeightRecText();
+        const w = parseFloat(dogWeightInput.value);
+        if (w && w > 0) {
+          dailyTargetInput.value = Math.round(w * 55);
+        }
+      });
+
+      profileBtn.addEventListener('click', openProfileModal);
+      closeProfileBtn.addEventListener('click', closeProfileModal);
+      profileModal.addEventListener('click', (e) => {
+        if (e.target === profileModal) closeProfileModal();
+      });
+
+      saveProfileBtn.addEventListener('click', () => {
+        const name = dogNameInput.value.trim() || 'Buddy';
+        const weight = parseFloat(dogWeightInput.value) || 0;
+        const target = parseInt(dailyTargetInput.value, 10) || 600;
+        const notes = vetNotesInput.value.trim();
+
+        profile.name = name;
+        profile.weightKg = weight;
+        profile.dailyTargetMl = target;
+        profile.notes = notes;
+
+        saveStorage();
+        closeProfileModal();
+        render();
+        showToast('Saved profile for ' + name + '! 🐶', '✅');
+      });
+
+      function openReportPreview() {
+        reportPreviewContent.textContent = buildVetReport();
+        reportModal.classList.add('active');
+      }
+
+      function closeReportModal() {
+        reportModal.classList.remove('active');
+      }
+
+      openReportBtn.addEventListener('click', openReportPreview);
+      closeReportBtn.addEventListener('click', closeReportModal);
+      reportModal.addEventListener('click', (e) => {
+        if (e.target === reportModal) closeReportModal();
+      });
+
+      modalCopyReportBtn.addEventListener('click', async () => {
+        const text = reportPreviewContent.textContent;
+        const success = await copyToClipboard(text);
+        if (success) {
+          showToast('Copied full report to clipboard!', '📋');
+          closeReportModal();
+        }
+      });
+
+      loadStorage();
+      render();
+    })();
+  </script>
+</body>
+</html>
